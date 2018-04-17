@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.integrate as scpi
+import numpy.fft as fft
 
 import matplotlib.pyplot as plt
 
@@ -18,7 +19,7 @@ class Stimuli(object):
 
 class HodgkinHuxley(object): 
 
-	def __init__(self, gNa=120., gK=36., gL=0.3, Cm=1.0, ENa=115.0, EK=-12.0, El=10.613): 
+	def __init__(self, gNa=40., gK=35., gL=0.3, Cm=1.0, ENa=50.0, EK=-77.0, El=-65.): 
 		# Mean sodium channel conductivity
 		self.gNa = gNa
 		# Sodium potential
@@ -43,10 +44,12 @@ class HodgkinHuxley(object):
 	# Potassium channel
 
 	def alpha_n(self, Vm): 
-		return (10 - Vm) / (100 * np.exp((10-Vm)/10) - 1)
+		# return (10 - Vm) / (100 * np.exp((10-Vm)/10) - 1)
+		return 0.02 * (Vm - 25) / (1 - np.exp(-(Vm - 25)/9))
 
 	def beta_n(self, Vm): 
-		return 0.125 * np.exp(-Vm / 80)
+		# return 0.125 * np.exp(-Vm / 80)
+		return -0.002 * (Vm - 25)/ (1 - np.exp((Vm - 25)/9))
 
 	def n_inf(self, Vm): 
 		return self.alpha_n(Vm) / (self.alpha_n(Vm) + self.beta_n(Vm))
@@ -60,20 +63,24 @@ class HodgkinHuxley(object):
 
 	# Fast channel 
 	def alpha_m(self, Vm): 
-		return (25 - Vm) / (10 * np.exp((25-Vm) / 10) - 1) 
+		# return (25 - Vm) / (10 * np.exp((25-Vm) / 10) - 1) 
+		return 0.182 * (Vm + 35) / ( 1 - np.exp(-(Vm + 35)/9))
 
 	def beta_m(self, Vm): 
-		return 4 * np.exp(-Vm/18)
+		# return 4 * np.exp(-Vm/18)
+		return -0.124 * (Vm + 35) / (1 - np.exp((Vm + 35)/9))
 
 	def m_inf(self, Vm): 
 		return self.alpha_m(Vm) / (self.alpha_m(Vm) + self.beta_m(Vm))
 
 	# Slow channel
 	def alpha_h(self, Vm): 
-		return 0.07*np.exp(-Vm/20)
+		# return 0.07*np.exp(-Vm/20)
+		return 0.25 * np.exp(-(Vm + 90) / 12) 
 
 	def beta_h(self, Vm): 
-		return 1 / (np.exp((30-Vm) / 10) +1)
+		# return 1 / (np.exp((30-Vm) / 10) +1)
+		return 0.25 * np.exp((Vm + 62) / 6) / np.exp((Vm + 90) / 12)
 
 	def h_inf(self, Vm): 
 		return self.alpha_h(Vm) / (self.alpha_h(Vm) + self.beta_h(Vm))
@@ -110,8 +117,7 @@ class HodgkinHuxley(object):
 
 
 
-
-	def stimulate(self, stimuli, Vm_0=0.):
+	def stimulate(self, stimuli, Vm_0=-65.):
 		# The input stimuli is the injected current
 		assert(isinstance(stimuli, Stimuli))
 		self.Iinj = stimuli
@@ -127,9 +133,22 @@ class HodgkinHuxley(object):
 if __name__ == "__main__": 
 	hh = HodgkinHuxley()
 
-	y = hh.stimulate( Stimuli(lambda t : 0 if t < 5 or t > 20 else 50,0,100,10000) )
+
+	ampl = 2.
+
+	
+	# y = hh.stimulate( Stimuli(lambda t : ampl if t >= 1 and t < 2 else 0.,0,100,10000) )
+	y = hh.stimulate( Stimuli(lambda t : ampl, 0 , 100, 10000))
 	Vm = [y[i][0] for i in range(10000)]
 
+	f = fft.fft(Vm - np.mean(Vm))
+	freq = fft.fftfreq(len(f))
+
+	plt.subplot(2,1,1)
+	plt.plot(freq*100000, f)
+	print(100000 * freq[np.argmax(np.abs(f))])
+
+	plt.subplot(2,1,2)
 	plt.plot(np.linspace(0,100,10000),Vm)
+
 	plt.show()
-	print(Vm)
