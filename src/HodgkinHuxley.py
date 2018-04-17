@@ -168,15 +168,15 @@ if __name__ == "__main__":
 
 	rec = []
 
-	valmin = 0.4
-	valmax = 2.4
+	valmin = 0.
+	valmax = 2000.
 	valres = 10
 
 	for ampl in np.linspace(valmin, valmax, valres):
 
 		# y = hh.stimulate( Stimuli(lambda t : ampl if t >= 1 and t < 2 else 0.,0,100,10000) )
-		# s = Stimuli(lambda t : ampl if t > 0 else 0., -100. , 200., 1000)
-		s = Stimuli(lambda t : 200.0 if t >= 1 and t < 2 else 0., 0., 20., 100000) 
+		s = Stimuli(lambda t : ampl if t > 0 else 0., -100. , 200., 1000)
+		# s = Stimuli(lambda t : 200.0 if t >= 1 and t < 2 else 0., 0., 20., 100000) 
 		y = hh.stimulate( s )
 
 		Vm = [y[i][0] for i in range(s.resolution)]
