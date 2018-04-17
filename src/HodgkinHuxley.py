@@ -4,9 +4,11 @@ import scipy.integrate as scpi
 import matplotlib.pyplot as plt
 
 class Stimuli(object): 
-	def __init__(self, time_start, time_stop, time_function):
+	def __init__(self, time_function, time_start, time_stop, resolution):
 		self.time_start = time_start
 		self.time_stop = time_stop
+		self.resolution = resolution
+		self.timepoints = np.linspace(self.time_start, self.time_stop, self.resolution)
 
 		assert(callable(time_function))
 		self.time_function = time_function
@@ -39,6 +41,7 @@ class HodgkinHuxley(object):
 		self.Iinj = None
 
 	# Potassium channel
+
 	def alpha_n(self, Vm): 
 		return (10 - Vm) / (100 * np.exp((10-Vm)/10) - 1)
 
@@ -48,11 +51,14 @@ class HodgkinHuxley(object):
 	def n_inf(self, Vm): 
 		return self.alpha_n(Vm) / (self.alpha_n(Vm) + self.beta_n(Vm))
 
+	# Potassium current
 	def IK(self, Vm, n): 
 		return self.gK * n **4 * (Vm - self.EK)
 
 
-	# Sodium channel 
+	# Sodium channels
+
+	# Fast channel 
 	def alpha_m(self, Vm): 
 		return (25 - Vm) / (10 * np.exp((25-Vm) / 10) - 1) 
 
@@ -62,6 +68,7 @@ class HodgkinHuxley(object):
 	def m_inf(self, Vm): 
 		return self.alpha_m(Vm) / (self.alpha_m(Vm) + self.beta_m(Vm))
 
+	# Slow channel
 	def alpha_h(self, Vm): 
 		return 0.07*np.exp(-Vm/20)
 
@@ -71,6 +78,7 @@ class HodgkinHuxley(object):
 	def h_inf(self, Vm): 
 		return self.alpha_h(Vm) / (self.alpha_h(Vm) + self.beta_h(Vm))
 
+	# Sodium current
 	def INa(self, Vm, m, h): 
 		return self.gNa * m**3 * h * (Vm - self.ENa) 
 
@@ -84,9 +92,16 @@ class HodgkinHuxley(object):
 	def compute_dydt(self, y, t): 
 		Vm, n, m, h = y
 
+		# Membrane potential dynamics
 		dVmdt = (self.Iinj(t) - self.IK(Vm, n) - self.INa(Vm, m, h) - self.Il(Vm)) / self.Cm
+
+		# Potassium channels dynamics
 		dndt = self.alpha_n(Vm) * (1. - n) - self.beta_n(Vm) * n
+
+		# Sodium channels dynamics
+		# Fast channels
 		dmdt = self.alpha_m(Vm) * (1. - m) - self.beta_m(Vm) * m
+		# Slow channel
 		dhdt = self.alpha_h(Vm) * (1. - h) - self.beta_h(Vm) * h
 
 		dydt = [dVmdt, dndt, dmdt, dhdt]
@@ -96,23 +111,25 @@ class HodgkinHuxley(object):
 
 
 
-	def __call__(self, stimuli, Vm_0=0., resolution=10000):
+	def stimulate(self, stimuli, Vm_0=0.):
+		# The input stimuli is the injected current
 		assert(isinstance(stimuli, Stimuli))
 		self.Iinj = stimuli
 
+		# Initial y point
 		y_0 = [Vm_0, self.n_inf(Vm_0), self.m_inf(Vm_0), self.h_inf(Vm_0)]	
-		timepoints = np.linspace(stimuli.time_start, stimuli.time_stop, resolution)
 
-		y = scpi.odeint(self.compute_dydt, y_0, timepoints)
+		# Integrate to get a time serie of y
+		y = scpi.odeint(self.compute_dydt, y_0, stimuli.timepoints)
 
 		return y
 
 if __name__ == "__main__": 
 	hh = HodgkinHuxley()
 
-	y = hh(Stimuli(0,100,lambda t : 0 if t < 5 else 1))
+	y = hh.stimulate( Stimuli(lambda t : 0 if t < 5 or t > 20 else 50,0,100,10000) )
 	Vm = [y[i][0] for i in range(10000)]
 
-	plt.plot(np.linspace(0,10,10000),Vm)
+	plt.plot(np.linspace(0,100,10000),Vm)
 	plt.show()
 	print(Vm)
