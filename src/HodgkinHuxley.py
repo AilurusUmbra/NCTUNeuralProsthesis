@@ -134,19 +134,21 @@ if __name__ == "__main__":
 	hh = HodgkinHuxley()
 
 
-	ampl = 2.
+	# ampl = 2.
 
-	
-	# y = hh.stimulate( Stimuli(lambda t : ampl if t >= 1 and t < 2 else 0.,0,100,10000) )
-	y = hh.stimulate( Stimuli(lambda t : ampl, 0 , 100, 10000))
-	Vm = [y[i][0] for i in range(10000)]
+	for ampl in np.linspace(0, 10,100):
+		# y = hh.stimulate( Stimuli(lambda t : ampl if t >= 1 and t < 2 else 0.,0,100,10000) )
+		y = hh.stimulate( Stimuli(lambda t : ampl, 0 , 100, 10000))
+		Vm = [y[i][0] for i in range(10000)]
 
-	f = fft.fft(Vm - np.mean(Vm))
-	freq = fft.fftfreq(len(f))
+		f = fft.fft(Vm - np.mean(Vm))
+		freq = fft.fftfreq(len(f))
+		print(100000 * freq[np.argmax(np.abs(f))])
+
+
 
 	plt.subplot(2,1,1)
 	plt.plot(freq*100000, f)
-	print(100000 * freq[np.argmax(np.abs(f))])
 
 	plt.subplot(2,1,2)
 	plt.plot(np.linspace(0,100,10000),Vm)
