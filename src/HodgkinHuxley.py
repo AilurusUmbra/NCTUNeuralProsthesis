@@ -99,7 +99,7 @@ class HodgkinHuxley(object):
 	def compute_dydt(self, y, t): 
 		Vm, n, m, h = y
 
-		print(Vm, self.IK(Vm, n), self.INa(Vm, m, h), self.Il(Vm))
+		# print(Vm, self.IK(Vm, n), self.INa(Vm, m, h), self.Il(Vm))
 
 		# Membrane potential dynamics
 		dVmdt = (self.Iinj(t) - self.IK(Vm, n) - self.INa(Vm, m, h) - self.Il(Vm)) / self.Cm
@@ -156,7 +156,7 @@ def fcy(timepoints, Vm, start):
 			done = False
 
 	if first is not None and second is not None: 
-		return 1e3 / (timepoints[start + second] - timepoints[start + first])
+		return 1e4 / (timepoints[start + second] - timepoints[start + first])
 	else: 
 		return np.NaN
 
@@ -168,14 +168,14 @@ if __name__ == "__main__":
 
 	rec = []
 
-	valmin = 0.
-	valmax = 2000.
-	valres = 10
+	valmin = 0.3
+	valmax = 2.3
+	valres = 100
 
 	for ampl in np.linspace(valmin, valmax, valres):
 
 		# y = hh.stimulate( Stimuli(lambda t : ampl if t >= 1 and t < 2 else 0.,0,100,10000) )
-		s = Stimuli(lambda t : ampl if t > 0 else 0., -100. , 200., 1000)
+		s = Stimuli(lambda t : ampl if t > 0 else 0., -100. , 2000., 10000)
 		# s = Stimuli(lambda t : 200.0 if t >= 1 and t < 2 else 0., 0., 20., 100000) 
 		y = hh.stimulate( s )
 
@@ -192,7 +192,7 @@ if __name__ == "__main__":
 		plt.plot(s.timepoints,Vm)
 		plt.subplot(2,1,2)
 		plt.plot(s.timepoints, n, s.timepoints, m , s.timepoints, h)
-		plt.show()
+		plt.show(False)
 
 		# f = fft.fft(Vm[251:] - np.mean(Vm[251:]))
 		# freq = fft.fftfreq(len(f))
