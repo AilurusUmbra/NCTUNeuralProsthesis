@@ -156,7 +156,7 @@ def fcy(timepoints, Vm, start):
 			done = False
 
 	if first is not None and second is not None: 
-		return 1e4 / (timepoints[start + second] - timepoints[start + first])
+		return 1 / (timepoints[start + second] - timepoints[start + first])
 	else: 
 		return np.NaN
 
